@@ -18,3 +18,11 @@ Tento projekt generuje falešná SQL data pro databázi fotbalového turnaje pom
 
 ```bash
 npm install
+
+### 2. Spuštění generátoru
+
+node generate.js
+
+### 3. Script vytvoří soubor:
+
+output.sql
