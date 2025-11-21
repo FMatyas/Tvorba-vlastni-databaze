@@ -1,0 +1,8 @@
+{
+  "name": "fotbalovy-turnaj-generator",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1"
+  }
+}
