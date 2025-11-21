@@ -1,0 +1,20 @@
+# Fotbalový Turnaj – Fake SQL Data Generator
+
+Tento projekt generuje falešná SQL data pro databázi fotbalového turnaje pomocí **faker-js**.
+
+## Funkce
+
+- Generuje 10 týmů
+- Ke každému týmu vytvoří 15 hráčů
+- Vytvoří 20 zápasů
+- Přidává hráče do zápasů
+- Generuje události (góly, karty, střídání)
+- Vytváří přestupy hráčů
+- Výsledek ukládá do `output.sql`
+
+## Použití
+
+### 1. Instalace
+
+```bash
+npm install
