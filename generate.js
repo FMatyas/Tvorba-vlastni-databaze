@@ -1,16 +1,15 @@
 import { faker } from "@faker-js/faker";
 import fs from "fs";
 
-// Kolik dat generovat
 const TEAM_COUNT = 10;
 const PLAYERS_PER_TEAM = 15;
 const MATCH_COUNT = 20;
 
 let sql = "";
 
-// ------------------------------
+// --------------------------------------
 // TÝMY
-// ------------------------------
+// --------------------------------------
 let teams = [];
 sql += "-- TÝMY\n";
 for (let i = 1; i <= TEAM_COUNT; i++) {
@@ -21,9 +20,9 @@ for (let i = 1; i <= TEAM_COUNT; i++) {
 }
 sql += "\n";
 
-// ------------------------------
+// --------------------------------------
 // HRÁČI
-// ------------------------------
+// --------------------------------------
 let players = [];
 sql += "-- HRÁČI\n";
 let playerID = 1;
@@ -45,9 +44,9 @@ for (let team of teams) {
 }
 sql += "\n";
 
-// ------------------------------
+// --------------------------------------
 // ZÁPASY
-// ------------------------------
+// --------------------------------------
 sql += "-- ZÁPASY\n";
 let matches = [];
 
@@ -55,74 +54,77 @@ for (let i = 1; i <= MATCH_COUNT; i++) {
   let domaci = faker.number.int({ min: 1, max: TEAM_COUNT });
   let hoste = faker.number.int({ min: 1, max: TEAM_COUNT });
 
-  // Ať nejsou stejné týmy proti sobě
-  while (hoste === domaci) {
-    hoste = faker.number.int({ min: 1, max: TEAM_COUNT });
-  }
+  while (hoste === domaci) hoste = faker.number.int({ min: 1, max: TEAM_COUNT });
 
-  const cas = faker.date.recent({ days: 100 }).toISOString().replace("T", " ").split(".")[0];
+  const cas = faker.date.recent({ days: 50 }).toISOString().replace("T", " ").split(".")[0];
+  const g1 = faker.number.int({ min: 0, max: 5 });
+  const g2 = faker.number.int({ min: 0, max: 5 });
 
-  const domaci_goly = faker.number.int({ min: 0, max: 5 });
-  const hoste_goly = faker.number.int({ min: 0, max: 5 });
-
-  sql += `INSERT INTO zapas VALUES (${i + 1000}, ${domaci}, ${hoste}, '${cas}', ${domaci_goly}, ${hoste_goly});\n`;
-
+  sql += `INSERT INTO zapas VALUES (${i + 1000}, ${domaci}, ${hoste}, '${cas}', ${g1}, ${g2});\n`;
   matches.push({ id: i + 1000, domaci, hoste });
 }
 sql += "\n";
 
-// ------------------------------
-// HRÁČI V ZÁPASE (vybere náhodných 11 hráčů z týmu)
-// ------------------------------
+// --------------------------------------
+// HRÁČI V ZÁPASE
+// --------------------------------------
 sql += "-- HRÁČI V ZÁPASE\n";
 
 for (let match of matches) {
-  const homePlayers = players.filter(p => p.team === match.domaci);
-  const awayPlayers = players.filter(p => p.team === match.hoste);
+  const home = players.filter(p => p.team === match.domaci);
+  const away = players.filter(p => p.team === match.hoste);
 
-  const selectedHome = faker.helpers.shuffle(homePlayers).slice(0, 11);
-  const selectedAway = faker.helpers.shuffle(awayPlayers).slice(0, 11);
+  const chosen = [
+    ...faker.helpers.shuffle(home).slice(0, 11),
+    ...faker.helpers.shuffle(away).slice(0, 11)
+  ];
 
-  for (let p of [...selectedHome, ...selectedAway]) {
-    const minuty = faker.number.int({ min: 30, max: 90 });
-    sql += `INSERT INTO hraci_v_zapase VALUES (${p.id}, ${match.id}, ${minuty});\n`;
+  for (let p of chosen) {
+    sql += `INSERT INTO hraci_v_zapase VALUES (${p.id}, ${match.id}, ${faker.number.int({ min: 30, max: 90 })});\n`;
   }
 }
 sql += "\n";
 
-// ------------------------------
-// UDÁLOSTI V ZÁPASE
-// ------------------------------
+// --------------------------------------
+// UDÁLOSTI
+// --------------------------------------
 sql += "-- UDÁLOSTI\n";
 let eventID = 1;
 
 for (let match of matches) {
-  const hraci = players.filter(p => p.team === match.domaci || p.team === match.hoste);
-  const eventCount = faker.number.int({ min: 1, max: 6 });
+  const available = players.filter(p => p.team === match.domaci || p.team === match.hoste);
+  const count = faker.number.int({ min: 1, max: 6 });
 
-  for (let i = 0; i < eventCount; i++) {
-    const hrac = faker.helpers.arrayElement(hraci).id;
-    const minuta = faker.number.int({ min: 1, max: 90 });
+  for (let i = 0; i < count; i++) {
+    const p = faker.helpers.arrayElement(available).id;
     const typ = faker.helpers.arrayElement(["gól", "žlutá karta", "červená karta", "střídání"]);
-    const popis = faker.lorem.sentence();
 
-    sql += `INSERT INTO udalosti VALUES (${eventID}, ${match.id}, ${hrac}, ${minuta}, '${typ}', '${popis}', NULL);\n`;
+    sql += `INSERT INTO udalosti VALUES (
+      ${eventID},
+      ${match.id},
+      ${p},
+      ${faker.number.int({ min: 1, max: 90 })},
+      '${typ}',
+      '${faker.lorem.sentence()}',
+      NULL
+    );\n`;
+
     eventID++;
   }
 }
 sql += "\n";
 
-// ------------------------------
+// --------------------------------------
 // PŘESTUPY
-// ------------------------------
+// --------------------------------------
 sql += "-- PŘESTUPY\n";
-for (let j = 0; j < 10; j++) {
-  const hrac = faker.helpers.arrayElement(players);
+
+for (let i = 1; i <= 10; i++) {
+  const p = faker.helpers.arrayElement(players);
   const newTeam = faker.number.int({ min: 1, max: TEAM_COUNT });
 
-  sql += `INSERT INTO prestup VALUES (${j + 1}, ${hrac.id}, ${newTeam}, '${faker.date.past().toISOString().split("T")[0]}');\n`;
+  sql += `INSERT INTO prestup VALUES (${i}, ${p.id}, ${newTeam}, '${faker.date.past().toISOString().split("T")[0]}');\n`;
 }
 
-// Uložení do souboru
-fs.writeFileSync("output.sql", sql);
-console.log("output.sql byl úspěšně vygenerován!");
+fs.writeFileSync("fotbalovy_turnaj.sql", sql);
+console.log("✔ Soubor fotbalovy_turnaj.sql byl úspěšně vygenerován!");
