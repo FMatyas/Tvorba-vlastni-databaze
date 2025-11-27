@@ -1,0 +1,66 @@
+Table tym {
+  id_tymu int [pk]
+  jmeno_tymu varchar
+  pocet_hracu int
+}
+
+Table hrac {
+  id_hrace int [pk]
+  id_aktualniho_tymu int
+  jmeno varchar
+  prijmeni varchar
+  pohlavi varchar
+  datum_narozeni date
+  pocet_golu int
+  pozice varchar
+}
+
+Table zapas {
+  id_zapasu int [pk]
+  domaci_tym int
+  hostujici_tym int
+  cas_zapasu datetime
+  domaci_goly int
+  hoste_goly int
+}
+
+Table hraci_v_zapase {
+  id_hrace int
+  id_zapasu int
+  odehrane_minuty int
+
+  indexes {
+    (id_hrace, id_zapasu) [pk]
+  }
+}
+
+Table udalosti {
+  id_udalosti int [pk]
+  id_zapasu int
+  id_hrace int
+  minuta int
+  typ varchar
+  popisek varchar
+  stridajici_hrac int
+}
+
+Table prestup {
+  id_prestupu int [pk]
+  id_hrace int
+  id_noveho_tymu int
+  datum date
+}
+
+Ref: hrac.id_aktualniho_tymu > tym.id_tymu
+Ref: zapas.domaci_tym > tym.id_tymu
+Ref: zapas.hostujici_tym > tym.id_tymu
+
+Ref: hraci_v_zapase.id_hrace > hrac.id_hrace
+Ref: hraci_v_zapase.id_zapasu > zapas.id_zapasu
+
+Ref: udalosti.id_hrace > hrac.id_hrace
+Ref: udalosti.stridajici_hrac > hrac.id_hrace
+Ref: udalosti.id_zapasu > zapas.id_zapasu
+
+Ref: prestup.id_hrace > hrac.id_hrace
+Ref: prestup.id_noveho_tymu > tym.id_tymu
