@@ -1,66 +1,78 @@
-Table tym {
-  id_tymu int [pk]
-  jmeno_tymu varchar
-  pocet_hracu int
-}
+SET FOREIGN_KEY_CHECKS = 0;
 
-Table hrac {
-  id_hrace int [pk]
-  id_aktualniho_tymu int
-  jmeno varchar
-  prijmeni varchar
-  pohlavi varchar
-  datum_narozeni date
-  pocet_golu int
-  pozice varchar
-}
+CREATE TABLE `tym` (
+  `id_tymu` INT NOT NULL AUTO_INCREMENT,
+  `jmeno_tymu` VARCHAR(255) NOT NULL,
+  `pocet_hracu` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id_tymu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-Table zapas {
-  id_zapasu int [pk]
-  domaci_tym int
-  hostujici_tym int
-  cas_zapasu datetime
-  domaci_goly int
-  hoste_goly int
-}
+CREATE TABLE `hrac` (
+  `id_hrace` INT NOT NULL AUTO_INCREMENT,
+  `id_aktualniho_tymu` INT NOT NULL,
+  `jmeno` VARCHAR(255) NOT NULL,
+  `prijmeni` VARCHAR(255) NOT NULL,
+  `pohlavi` ENUM('muž','žena') NOT NULL,
+  `datum_narozeni` DATE DEFAULT NULL,
+  `pocet_golu` INT NOT NULL DEFAULT 0,
+  `pozice` ENUM('Brankář','Obránce','Záložník','Útočník') NOT NULL,
+  PRIMARY KEY (`id_hrace`),
+  KEY `idx_hrac_tym` (`id_aktualniho_tymu`),
+  CONSTRAINT `fk_hrac_tym` FOREIGN KEY (`id_aktualniho_tymu`) REFERENCES `tym` (`id_tymu`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-Table hraci_v_zapase {
-  id_hrace int
-  id_zapasu int
-  odehrane_minuty int
+CREATE TABLE `zapas` (
+  `id_zapasu` INT NOT NULL AUTO_INCREMENT,
+  `domaci_tym` INT NOT NULL,
+  `hostujici_tym` INT NOT NULL,
+  `cas_zapasu` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `domaci_goly` INT NOT NULL DEFAULT 0,
+  `hoste_goly` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id_zapasu`),
+  KEY `idx_zapas_domaci` (`domaci_tym`),
+  KEY `idx_zapas_hoste` (`hostujici_tym`),
+  CONSTRAINT `fk_zapas_domaci_tym` FOREIGN KEY (`domaci_tym`) REFERENCES `tym` (`id_tymu`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_zapas_hoste_tym` FOREIGN KEY (`hostujici_tym`) REFERENCES `tym` (`id_tymu`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-  indexes {
-    (id_hrace, id_zapasu) [pk]
-  }
-}
+CREATE TABLE `hraci_v_zapase` (
+  `id_hrace` INT NOT NULL,
+  `id_zapasu` INT NOT NULL,
+  `odehrane_minuty` INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id_hrace`, `id_zapasu`),
+  KEY `idx_hvz_hrac` (`id_hrace`),
+  KEY `idx_hvz_zapas` (`id_zapasu`),
+  CONSTRAINT `fk_hvz_hrac` FOREIGN KEY (`id_hrace`) REFERENCES `hrac` (`id_hrace`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_hvz_zapas` FOREIGN KEY (`id_zapasu`) REFERENCES `zapas` (`id_zapasu`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-Table udalosti {
-  id_udalosti int [pk]
-  id_zapasu int
-  id_hrace int
-  minuta int
-  typ varchar
-  popisek varchar
-  stridajici_hrac int
-}
+CREATE TABLE `udalosti` (
+  `id_udalosti` INT NOT NULL AUTO_INCREMENT,
+  `id_zapasu` INT NOT NULL,
+  `id_hrace` INT NOT NULL,
+  `minuta` INT NOT NULL,
+  `typ` ENUM('gól','žlutá karta','červená karta','střídání') NOT NULL,
+  `popisek` VARCHAR(255) DEFAULT NULL,
+  `stridajici_hrac` INT DEFAULT NULL,
+  PRIMARY KEY (`id_udalosti`),
+  KEY `idx_udalosti_zapas` (`id_zapasu`),
+  KEY `idx_udalosti_hrac` (`id_hrace`),
+  KEY `idx_udalosti_stridani` (`stridajici_hrac`),
+  CONSTRAINT `fk_udalosti_zapas` FOREIGN KEY (`id_zapasu`) REFERENCES `zapas` (`id_zapasu`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_udalosti_hrac` FOREIGN KEY (`id_hrace`) REFERENCES `hrac` (`id_hrace`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_udalosti_stridani_hrac` FOREIGN KEY (`stridajici_hrac`) REFERENCES `hrac` (`id_hrace`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-Table prestup {
-  id_prestupu int [pk]
-  id_hrace int
-  id_noveho_tymu int
-  datum date
-}
+CREATE TABLE `prestup` (
+  `id_prestupu` INT NOT NULL AUTO_INCREMENT,
+  `id_hrace` INT NOT NULL,
+  `id_noveho_tymu` INT NOT NULL,
+  `datum` DATE NOT NULL,
+  PRIMARY KEY (`id_prestupu`),
+  KEY `idx_prestup_hrac` (`id_hrace`),
+  KEY `idx_prestup_tym` (`id_noveho_tymu`),
+  CONSTRAINT `fk_prestup_hrac` FOREIGN KEY (`id_hrace`) REFERENCES `hrac` (`id_hrace`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_prestup_tym` FOREIGN KEY (`id_noveho_tymu`) REFERENCES `tym` (`id_tymu`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-Ref: hrac.id_aktualniho_tymu > tym.id_tymu
-Ref: zapas.domaci_tym > tym.id_tymu
-Ref: zapas.hostujici_tym > tym.id_tymu
-
-Ref: hraci_v_zapase.id_hrace > hrac.id_hrace
-Ref: hraci_v_zapase.id_zapasu > zapas.id_zapasu
-
-Ref: udalosti.id_hrace > hrac.id_hrace
-Ref: udalosti.stridajici_hrac > hrac.id_hrace
-Ref: udalosti.id_zapasu > zapas.id_zapasu
-
-Ref: prestup.id_hrace > hrac.id_hrace
-Ref: prestup.id_noveho_tymu > tym.id_tymu
+SET FOREIGN_KEY_CHECKS = 1;
